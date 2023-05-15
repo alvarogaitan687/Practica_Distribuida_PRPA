@@ -2,8 +2,6 @@ from multiprocessing.connection import Listener
 from multiprocessing import Process, Manager, Value, Lock
 import traceback
 import sys
-import os
-os.environ['multiprocessing.spawn'] = 'False'
 import multiprocessing
 
 LEFT_PLAYER = 0
@@ -14,80 +12,43 @@ X=0
 Y=1
 DELTA = 30
 
-class Player():
+class Player(): #Jugador 
     def __init__(self, side):
-        self.side = side
-        if side == LEFT_PLAYER:
-            self.pos = [5, SIZE[Y]//2]
-            #self.bullets_0 = manager.list()
+        self.side = side #Lado del jugador (izq/der)
+        if side == LEFT_PLAYER: #Inicializamos las posiciones
+            self.pos = [5, SIZE[Y]//2] 
         else:
             self.pos = [SIZE[X] - 5, SIZE[Y]//2]
-            #self.bullets_1 = manager.list() 
-        #self.bullets = [Bullet(self.pos)]
+    
     def get_pos(self):
         return self.pos
 
     def get_side(self):
         return self.side
 
-    def moveDown(self):
-        self.pos[Y] += DELTA
-        if self.pos[Y] > SIZE[Y]:
+    def moveDown(self):  
+        self.pos[Y] += DELTA  #Movemos hacia abajo
+        if self.pos[Y] > SIZE[Y]: #Si nos pasamos del limite superior bloqueamos la nave en esa posicion (para que no se salga de la pantalla)
             self.pos[Y] = SIZE[Y]
 
     def moveUp(self):
-        self.pos[Y] -= DELTA
-        if self.pos[Y] < 0:
+        self.pos[Y] -= DELTA #Movemos hacia arriba 
+        if self.pos[Y] < 0:  #Si nos pasamos del limite inferior bloqueamos la nave en esa posicion (para que no se salga de la pantalla)
             self.pos[Y] = 0
-         
-    #def shoot(self):
-    #    for i in self.bullets:
-    #        i.update
-        """
-        bullets = self.bullets
-        bullets.append(Bullet(self.pos))
-        self.bullets = bullets
-        """
-        
-        #print (self.bullets[0])
-        
 
     def __str__(self):
         return f"P<{SIDESSTR[self.side]}, {self.pos}>"
 
-class Ball():
-    def __init__(self, velocity):
-        self.pos=[ SIZE[X]//2, SIZE[Y]//2 ]
-        self.velocity = velocity
-
-    def get_pos(self):
-        return self.pos
-
-    def update(self):
-        self.pos[X] += self.velocity[X]
-        self.pos[Y] += self.velocity[Y]
-
-    def bounce(self, AXIS):
-        self.velocity[AXIS] = -self.velocity[AXIS]
-
-    def collide_player(self, side):
-        self.bounce(X)
-        self.pos[X] += 3*self.velocity[X]
-        self.pos[Y] += 3*self.velocity[Y]
-
-
-    def __str__(self):
-        return f"B<{self.pos, self.velocity}>"
 
 class Bullet():
     def __init__(self, side):
-        #self.pos= pos
-        self.side = side        
-        if side == LEFT_PLAYER:
+        self.side = side #Lado de la bala (izq/der)   
+        if side == LEFT_PLAYER: #Inicializamos las posiciones
                 self.pos = [5, SIZE[Y]//2]
         else:
             self.pos = [SIZE[X] - 5, SIZE[Y]//2]
-        self.velocity = 10
+        self.velocity = 0 #Inicializamos la velocidad 
+        
     def get_pos(self):
         return self.pos
     
@@ -95,17 +56,17 @@ class Bullet():
         return self.side
     
     def moveDown(self, side):
-        if side == 0 and self.pos[X] == 5:                
+        if side == 0 and self.pos[X] == 5: #Si es la bala del jugador izq, en caso de estar la bala en la nave se mueve con ella, si no, sigue su recorrido horizontal               
             self.pos[Y] += DELTA
             if self.pos[Y] > SIZE[Y]:
                 self.pos[Y] = SIZE[Y]
-        elif side == 1 and self.pos[X] == SIZE[X] - 5:
+        elif side == 1 and self.pos[X] == SIZE[X] - 5: #Si es la bala del jugador derecho, de nuevo comprueba si esta en la nave para moverla con ella 
             self.pos[Y] += DELTA
             if self.pos[Y] > SIZE[Y]:
                 self.pos[Y] = SIZE[Y]
 
-    def moveUp(self, side): #Cambiamos lo de que la bala vaya recta 
-        if side == 0 and self.pos[X] == 5:
+    def moveUp(self, side): #De igual forma que moveDown
+        if side == 0 and self.pos[X] == 5: 
             self.pos[Y] -= DELTA
             if self.pos[Y] < 0:
                 self.pos[Y] = 0
@@ -114,28 +75,20 @@ class Bullet():
             if self.pos[Y] < 0:
                 self.pos[Y] = 0
             
-    def update(self, side):
-        if (side == 0):
-            self.pos[X] += self.velocity
-        else:
-            self.pos[X] -= self.velocity
-        
-    """
-    def collide_player(self, side):
-        self.bounce(X)
-        self.pos[X] += 3*self.velocity[X]
-        self.pos[Y] += 3*self.velocity[Y]
-    """
-
+    def update(self, side): #Actualizacion de la posicion de la bala 
+        if (side == 0): #Si es la bala del jugador izq 
+            self.pos[X] += self.velocity #Avanza hacia la derecha 
+        else: #Si es la bala del jugador der
+            self.pos[X] -= self.velocity #Avanza hacia la izquierda 
+            
     def __str__(self):
         return f"B<{self.pos}>"
 
 
 class Game():
-    def __init__(self, manager):
+    def __init__(self, manager): #Inicializamos las componentes del juego 
         self.players = manager.list( [Player(LEFT_PLAYER), Player(RIGHT_PLAYER)] )
         self.bullets = manager.list( [Bullet(LEFT_PLAYER), Bullet(RIGHT_PLAYER)] )
-        self.ball = manager.list( [ Ball([-2,2]) ] )
         self.score = manager.list( [0,0] )
         self.running = Value('i', 1) 
         self.lock = Lock()
@@ -154,24 +107,18 @@ class Game():
 
     def stop(self):
         self.running.value = 0
-    """
-    def get_lista0 (self):
-        return self.lista0
-    
-    def get_lista1 (self):
-        return self.lista1
-    """
-    def moveUp(self, player):
+        
+    def moveUp(self, player): #moveUp llamado por un jugador 'player'
         self.lock.acquire()
         p = self.players[player]
         q = self.bullets[player]
-        p.moveUp()
-        q.moveUp(player)
+        p.moveUp() #Movemos la posicion del jugador 'player'
+        q.moveUp(player) #Movemos la posicion de su bala en ese sentido (se movera si se encuentra en la nave)
         self.players[player] = p
         self.bullets[player] = q
         self.lock.release()
 
-    def moveDown(self, player):
+    def moveDown(self, player): #De igual forma que moveUp
         self.lock.acquire()
         p = self.players[player]
         q = self.bullets[player]
@@ -180,33 +127,21 @@ class Game():
         self.players[player] = p
         self.bullets[player] = q
         self.lock.release()
-
-    def ball_collide(self, player):
-        self.lock.acquire()
-        ball = self.ball[0]
-        ball.collide_player(player)
-        self.ball[0] = ball
-        self.lock.release()
         
     def bullet_collide(self, player):
         self.lock.acquire()
         score = self.score
-        if player == 0:
-            score[1] += 1
-        else:
-            score[0] += 1
+        if player == 0: #Si el choque de la bala se produce con el jugador izq
+            score[1] += 1 #Sumamos un punto a su rival
+        else: #En caso contrario 
+            score[0] += 1  #Se lo sumamos a el 
         self.score = score
         self.lock.release()
-    """
-    def bullet_collide(self, player, bullet):
-        self.lock.acquire()
-        bullet.collide_player(player)
-        self.lock.release()
-    """
-    def shoot (self, player): #Es necesario el manager?? 
+        
+    def shoot (self, player): #Si un jugador 'player' dispara
         self.lock.acquire()
         p = self.bullets[player]
-        p.velocity = 10
+        p.velocity = 20 #Cambia la velocidad de su bala poniendola en movimiento 
         p.update(player)
         self.bullets[player] = p
         self.lock.release()
@@ -217,46 +152,28 @@ class Game():
         q = self.players[player]
         p.update(player)
         pos = p.get_pos()
-        pos2 = q.get_pos()
-        if player == 0:
-            if pos[X] > SIZE[X]:
-                p.velocity = 0
-                p.pos = pos2
-        else:
-            if pos[X] < 0:
-                p.velocity = 0
-                p.pos = pos2   
+        pos2 = q.get_pos() #Guardamos la posicion actual del jugador (para recolocar la bala si se sale de la pantalla)
+        if player == 0: #Si es la bala izq 
+            if pos[X] > SIZE[X]: #Si se sale de la pantalla 
+                p.velocity = 0 #Paramos la bala 
+                p.pos = pos2 #La recolocamos en la nave 
+        else: #Si es la bala der
+            if pos[X] < 0:  #Si se sale de la pantalla 
+                p.velocity = 0  #Paramos la bala 
+                p.pos = pos2  #La recolocamos en la nave 
         self.bullets[player] = p
         self.lock.release()
         
-    def get_info(self):
+    def get_info(self): #Informacion que se compartirá con los Clients para transmitir el estado actual del juego 
         info = {
             'pos_left_player': self.players[LEFT_PLAYER].get_pos(),
             'pos_right_player': self.players[RIGHT_PLAYER].get_pos(),
-            'pos_ball': self.ball[0].get_pos(),
             'score': list(self.score),
             'is_running': self.running.value == 1,
             'pos_left_bullet': self.bullets[0].get_pos(),
             'pos_right_bullet': self.bullets[1].get_pos()
-            #'lista_bullets': self.bullets
         }
         return info
-    
-    def move_ball(self):
-        self.lock.acquire()
-        ball = self.ball[0]
-        ball.update()
-        pos = ball.get_pos()
-        if pos[Y]<0 or pos[Y]>SIZE[Y]:
-            ball.bounce(Y)
-        if pos[X]>SIZE[X]:
-            self.score[LEFT_PLAYER] += 1
-            ball.bounce(X)
-        elif pos[X]<0:
-            self.score[RIGHT_PLAYER] += 1
-            ball.bounce(X)
-        self.ball[0]=ball
-        self.lock.release()
 
 
     def __str__(self):
@@ -264,44 +181,33 @@ class Game():
 
 def player(side, conn, game):
     try:
-        dispara_0 = 0
-        dispara_1 = 0
+        #dispara_0 = 0
+        #dispara_1 = 0
         print(f"starting player {SIDESSTR[side]}:{game.get_info()}")
-        print('Va a enviaaaaaaar', game.get_info())
-        conn.send( (side, game.get_info()) ) #Mandas al jugador la situacion actual y que jugador es 
+        conn.send( (side, game.get_info()) ) #Mandas a los Clients la situacion actual y que jugador es 
         while game.is_running():
             command = ""
             while command != "next":
-                command = conn.recv()
+                command = conn.recv() #Recibe la informacion de los Clients para actualizar el juego 
                 if command == "up":
                     game.moveUp(side)
                 elif command == "down":
                     game.moveDown(side)
-                #elif command == "collide":
-                    #game.ball_collide(side)
                 elif command == "collide_bullet":
                     game.bullet_collide(side)
                 elif command == "quit":
                     game.stop()
                 elif command == "espace":
-                    print ('comprobacion de que recibe que tiene que lanzar la bala')
-                    #game.shoot(side)
-                    if side == 0:
-                        game.shoot(0)
-                        dispara_0 = 1
-                    else:
-                        game.shoot(1)
-                        dispara_1 = 1
-            #if side == 1:
-                #game.move_ball()
-            if dispara_0 == 1:
-                game.move_bullets(0)
-            elif dispara_1 == 1:
-                game.move_bullets(1)
-                
-                
-                #game.move_bullets()
-            print ('pruebaaa')
+                    if side == 0: #Si dispara el jugador izq
+                        game.shoot(0) #Disparamos 
+                        #dispara_0 = 1 #Pasamos a mover 
+                    else: #Si dispara el jugador der 
+                        game.shoot(1) #Disparamos 
+                        #dispara_1 = 1
+            #if dispara_0 == 1:
+            game.move_bullets(0)
+            #elif dispara_1 == 1:
+            game.move_bullets(1)
             conn.send(game.get_info())
     except:
         traceback.print_exc()
@@ -309,8 +215,6 @@ def player(side, conn, game):
     finally:
         print(f"Game ended {game}")
 
-"""La sala actua como una centralita que manda la informacion actual del juego a ambos 
-jugadores es un intermediario"""
 def main(ip_address):
     manager = Manager()
     try:
@@ -321,9 +225,9 @@ def main(ip_address):
             game = Game(manager)           
             while True:
                 print(f"accepting connection {n_player}")
-                conn = listener.accept() #Aceptas el jugador como interlocutor
+                conn = listener.accept() 
                 players[n_player] = Process(target=player,
-                                            args=(n_player, conn, game)) #Ejecutas los player asociando a conn el canal de comunicacion
+                                            args=(n_player, conn, game)) #Ejecutas los jugadores asociando a conn el canal de comunicacion
                 n_player += 1
                 if n_player == 2:
                     players[0].start()
