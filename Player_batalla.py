@@ -20,8 +20,6 @@ PLAYER_COLOR = [GREEN, YELLOW]
 PLAYER_HEIGHT = 60
 PLAYER_WIDTH = 10
 
-BALL_COLOR = WHITE
-BALL_SIZE = 10
 FPS = 60
 
 
@@ -111,7 +109,7 @@ class Game():
         self.running = False
 
     def __str__(self):
-        return f"G<{self.players[RIGHT_PLAYER]}:{self.players[LEFT_PLAYER]}:{self.ball}>"
+        return f"G<{self.players[RIGHT_PLAYER]}:{self.players[LEFT_PLAYER]}>"
 
 imagen = pygame.transform.scale(pygame.image.load("player.png"), (54,42)) #Reescalamos la imagen para proporcionarla al tablero 
 class Paddle(pygame.sprite.Sprite): #Sprite de la nave 
@@ -140,9 +138,9 @@ class BulletSprite (pygame.sprite.Sprite): #Sprite de las balas
     def __init__ (self, bullet):
         super().__init__()
         if bullet.side == 0: #Rotamos las imagenes para que queden enfrentadas 
-            self.image = pygame.transform.rotate(imagen1, 90)
-        else:
             self.image = pygame.transform.rotate(imagen1, 270)
+        else:
+            self.image = pygame.transform.rotate(imagen1, 90)
         self.image.set_colorkey(BLACK)
         self.bullet = bullet
         self.rect = self.image.get_rect()

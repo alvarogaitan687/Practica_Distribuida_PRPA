@@ -96,9 +96,6 @@ class Game():
     def get_player(self, side):
         return self.players[side]
 
-    def get_ball(self):
-        return self.ball[0]
-
     def get_score(self):
         return list(self.score)
 
@@ -177,12 +174,10 @@ class Game():
 
 
     def __str__(self):
-        return f"G<{self.players[RIGHT_PLAYER]}:{self.players[LEFT_PLAYER]}:{self.ball[0]}:{self.running.value}>"
+        return f"G<{self.players[RIGHT_PLAYER]}:{self.players[LEFT_PLAYER]}:{self.running.value}>"
 
 def player(side, conn, game):
     try:
-        #dispara_0 = 0
-        #dispara_1 = 0
         print(f"starting player {SIDESSTR[side]}:{game.get_info()}")
         conn.send( (side, game.get_info()) ) #Mandas a los Clients la situacion actual y que jugador es 
         while game.is_running():
@@ -200,13 +195,9 @@ def player(side, conn, game):
                 elif command == "espace":
                     if side == 0: #Si dispara el jugador izq
                         game.shoot(0) #Disparamos 
-                        #dispara_0 = 1 #Pasamos a mover 
                     else: #Si dispara el jugador der 
                         game.shoot(1) #Disparamos 
-                        #dispara_1 = 1
-            #if dispara_0 == 1:
-            game.move_bullets(0)
-            #elif dispara_1 == 1:
+            game.move_bullets(0) #Mantenemos en movimiento las balas (Velocidad sera 0 si tiene que estar en la nave y 20 si esta en movimiento)
             game.move_bullets(1)
             conn.send(game.get_info())
     except:
